@@ -64,7 +64,7 @@ def extract_hyperlinks_from_excel(excel_file):
                     src_num_dict = {}
                     cell_location = cell.coordinate  # Cell location like 'A1'
                     src_num = cell.hyperlink.target.split("/")[-1]  # The hyperlink URL
-                    src_num_dict[src_num] = [src_num, cell_location]
+                    src_num_dict[src_num] = [src_num, cell_location,cell.column,cell.value,cell]
      
                     list_of_dict[src_num]=src_num_dict
 
@@ -110,22 +110,24 @@ def unit_period_dict(wb_fn,deleted_src,data_added_src,AR_src):
                         elif column > 0:
                             iter_cell = wb_fn.cell(row = row, column= (column))
                             #print(iter_cell.coordinate)
+                        #print(iter_cell.coordinate)
+                        #print(iter_cell.value)
+                        if iter_cell.hyperlink is not None:
+                            if (iter_cell.hyperlink.target.split("/")[-1]) in deleted_src:
+                                pass
                             
-                        if (iter_cell.hyperlink.target.split("/")[-1]) in deleted_src:
-                            pass
-                        
-                        elif (iter_cell.hyperlink.target.split("/")[-1]) in data_added_src:
-                            pass
-                        
-                        elif (iter_cell.hyperlink.target.split("/")[-1]) in AR_src:
-                            unit = cell_unit.value
-                            period = cell_period.value
-                            src_num_dict = {}
-                            cell_location = iter_cell.coordinate  # Cell location like 'A1'
-                            src_num = iter_cell.hyperlink.target.split("/")[-1]  # The hyperlink URL
-                            src_num_dict[src_num] = [unit,period, cell_location,iter_cell]
-                            unit_and_period_data[src_num]=src_num_dict
-                            break
+                            elif (iter_cell.hyperlink.target.split("/")[-1]) in data_added_src:
+                                pass
+                            
+                            elif (iter_cell.hyperlink.target.split("/")[-1]) in AR_src:
+                                unit = cell_unit.value
+                                period = cell_period.value
+                                src_num_dict = {}
+                                cell_location = iter_cell.coordinate  # Cell location like 'A1'
+                                src_num = iter_cell.hyperlink.target.split("/")[-1]  # The hyperlink URL
+                                src_num_dict[src_num] = [unit,period, cell_location,iter_cell]
+                                unit_and_period_data[src_num]=src_num_dict
+                                break
 
     return unit_and_period_data
 
@@ -142,6 +144,7 @@ def merge_unmerg_dict(wb_fn):
                         iter_cell = wb_fn.cell(row = row, column= (-1*column))
                     elif column > 0:
                         iter_cell = wb_fn.cell(row = row, column= (column))
+                        
                     if iter_cell.hyperlink is not None:
                         src_num_dict = {}
                         cell_location = iter_cell.coordinate  # Cell location like 'A1'
@@ -240,6 +243,8 @@ def Delta(AR_f,FR_f):
     delta_sheet.cell(4,1).value='Unit Error'
     delta_sheet.cell(5,1).value='Period Error'
     delta_sheet.cell(6,1).value='Merging Error'
+    delta_sheet.cell(7,1).value= 'Wrong Tagging - Quater'
+    delta_sheet.cell(8,1).value= 'Wrong Tagging - Value'
 
     AR_src = extract_hyperlinks_from_excel(AR_f)
     FR_src = extract_hyperlinks_from_excel(FR_f)
@@ -349,6 +354,43 @@ def Delta(AR_f,FR_f):
                     cell.comment = Comment(note, author="R. Praveen")
 
     delta_sheet.cell(6,2).value=int(sum(Merging_count))
+
+    # Wrog tagging - quater
+    wrong_quater_tagged = []
+    for item in FR_src.keys():
+        if item in AR_src.keys():
+            if FR_src[item][item][2]==AR_src[item][item][2]:
+                pass
+            else:
+                print(f"wrong taging in {FR_src[item][item][1]}, shifted to {AR_src[item][item][1]}")
+                fr_cell = FR_sheet.cell(FR_src[item][item][4].row,FR_src[item][item][4].column)
+                ar_cell = AR_sheet.cell(AR_src[item][item][4].row,AR_src[item][item][4].column)
+                ar_note = f'Wrong tagging corrected, shfited from {FR_src[item][item][1]} to {AR_src[item][item][1]}'
+                fr_cell.fill = PatternFill(start_color="FF0000",fill_type="solid")
+                fr_cell.comment = Comment('Wrong tagging', author="R. Praveen")
+                ar_cell.fill = PatternFill(start_color="FF0000",fill_type="solid")
+                ar_cell.comment = Comment(ar_note, author="R. Praveen")
+                wrong_quater_tagged.append(AR_src[item])
+    
+    #wrong tagging - value
+    Wrong_value_tagged = []
+    for item in FR_src.keys():
+        if item in AR_src.keys():
+            if FR_src[item][item][3]==AR_src[item][item][3]:
+                pass
+            else:
+                print(f"wrong taging in {FR_src[item][item][1]}- {FR_src[item][item][3]}, changed in {AR_src[item][item][1]} , to - {AR_src[item][item][3]}")
+                fr_cell = FR_sheet.cell(FR_src[item][item][4].row,FR_src[item][item][4].column)
+                ar_cell = AR_sheet.cell(AR_src[item][item][4].row,AR_src[item][item][4].column)
+                ar_note = f'Wrong tagging corrected, Value changed from {FR_src[item][item][3]} to {AR_src[item][item][3]}'
+                fr_cell.fill = PatternFill(start_color="FF0000",fill_type="solid")
+                fr_cell.comment = Comment('Wrong tagging', author="R. Praveen")
+                ar_cell.fill = PatternFill(start_color="FF0000",fill_type="solid")
+                ar_cell.comment = Comment(ar_note, author="R. Praveen")
+                Wrong_value_tagged.append(AR_src[item])
+
+    delta_sheet.cell(7,2).value= int(len(wrong_quater_tagged))
+    delta_sheet.cell(8,2).value= int(len(Wrong_value_tagged))
 
     combined_wb.save("combined_excel.xlsx")
         

@@ -144,7 +144,6 @@ def merge_unmerg_dict(wb_fn):
                         iter_cell = wb_fn.cell(row = row, column= (-1*column))
                     elif column > 0:
                         iter_cell = wb_fn.cell(row = row, column= (column))
-                        
                     if iter_cell.hyperlink is not None:
                         src_num_dict = {}
                         cell_location = iter_cell.coordinate  # Cell location like 'A1'
@@ -165,19 +164,25 @@ def All_SRC_in_ROW(wb_fn,row,data_added_src,deleted_src):
     columns = wb_fn.max_column
     cell_unit = wb_fn.cell(row = row, column= 3)
     src_list =[]
+    ar_row_list = []
+    fr_row_list = []
     for column in range (4,(columns+1)):
         iter_cell = wb_fn.cell(row = row, column= column)
         if iter_cell.hyperlink is not None:
             src_num = iter_cell.hyperlink.target.split("/")[-1]
             if src_num in data_added_src:
-                pass
+                ar_row_list.append(src_num)
+                
             elif src_num in deleted_src:
-                pass
+                fr_row_list.append(src_num)
+                
             else:
                 src_list.append(src_num)
+                ar_row_list.append(src_num)
+                fr_row_list.append(src_num)
         else:
             pass
-    return src_list
+    return src_list,ar_row_list,fr_row_list
 
 def Delta(AR_f,FR_f):
     #Loading excel and activating it
@@ -245,6 +250,7 @@ def Delta(AR_f,FR_f):
     delta_sheet.cell(6,1).value='Merging Error'
     delta_sheet.cell(7,1).value= 'Wrong Tagging - Quater'
     delta_sheet.cell(8,1).value= 'Wrong Tagging - Value'
+    delta_sheet.cell(9,1).value= 'Wrong Tagging - Data Replaced'
 
     AR_src = extract_hyperlinks_from_excel(AR_f)
     FR_src = extract_hyperlinks_from_excel(FR_f)
@@ -252,8 +258,7 @@ def Delta(AR_f,FR_f):
     deleted_src = [item for item in FR_src if item not in AR_src]
     data_added_src = [item for item in AR_src if item not in FR_src]
 
-    delta_sheet.cell(2,2).value= int(len(deleted_src))
-    delta_sheet.cell(3,2).value=int(len(data_added_src))
+    
 
     for row in range(1,FR_fn.max_row + 1):
       for column in range (1,FR_fn.max_column + 1):
@@ -319,16 +324,20 @@ def Delta(AR_f,FR_f):
 
     row_vise_src_FR = {}
     row_vise_src_AR = {}
+    row_ar_wrong_tag = {}
+    row_fr_wrong_tag = {}
     for item in MER_fr:
         if item in MER_ar:
             row_list_fr = []
             row_list_ar = []
             row_fr = MER_fr[item][item][0]
             row_ar = MER_ar[item][item][0]
-            row_list_fr = All_SRC_in_ROW(FR_fn,row_fr,data_added_src,deleted_src)
-            row_list_ar = All_SRC_in_ROW(AR_fn,row_ar,data_added_src,deleted_src)
+            row_list_fr,fr_,fr_wrong_tagging = All_SRC_in_ROW(FR_fn,row_fr,data_added_src,deleted_src)
+            row_list_ar,ar_wrong_tagging,ar_ = All_SRC_in_ROW(AR_fn,row_ar,data_added_src,deleted_src)
             row_vise_src_FR[item] = row_list_fr
             row_vise_src_AR[item] = row_list_ar
+            row_ar_wrong_tag[item] = ar_wrong_tagging
+            row_fr_wrong_tag[item] = fr_wrong_tagging
 
     #list for merging count
     Merging_count = []
@@ -391,6 +400,57 @@ def Delta(AR_f,FR_f):
 
     delta_sheet.cell(7,2).value= int(len(wrong_quater_tagged))
     delta_sheet.cell(8,2).value= int(len(Wrong_value_tagged))
+
+    # Wrong tagging - Data points replaced
+    wrong_taging_dict = {}
+    for item in row_fr_wrong_tag.keys():
+        if item in row_ar_wrong_tag.keys():
+            if row_fr_wrong_tag[item] == row_ar_wrong_tag[item]:
+                pass
+            else:
+                ar = {}
+                fr = {}
+                fr_row_deleted = []
+                ar_row_added = []
+                for row_iter in row_fr_wrong_tag[item]:
+                    if row_iter in deleted_src:
+                        print(f'deleted {row_iter}')
+                        fr_row_deleted.append(row_iter)
+                        
+                for row_iter in row_ar_wrong_tag[item]:
+                    if row_iter in data_added_src:
+                        ar_row_added.append(row_iter)
+                ar['AR']= ar_row_added
+                fr['FR']=fr_row_deleted
+                print(f"fr - {len(fr_row_deleted)}")
+                if len(fr_row_deleted) > 0:
+                    wrong_taging_dict[(AR_src[item][item][4]).row] = [ar,fr]
+
+    AR_replaced = []
+    FR_replaced = []
+    for item in wrong_taging_dict.keys():
+        for i in wrong_taging_dict[item][0]['AR']:
+            for j in wrong_taging_dict[item][1]['FR']:
+                if AR_src[i][i][2] == FR_src[j][j][2]:
+                    AR_replaced.append(i)
+                    FR_replaced.append(j)
+                    cell_col = AR_sheet.cell((AR_src[i][i][4]).row,(AR_src[i][i][4]).column)
+                    cell_col.fill = PatternFill(start_color="FF0000",fill_type="solid")
+                    note = f'Wrong tagging, Number replaced with- {AR_src[i][i][4].value}, from- {FR_src[j][j][4].value}'
+                    cell_col.comment = Comment(note, author="R. Praveen")
+
+    delta_sheet.cell(9,2).value = int(len(AR_replaced))
+    
+
+    #removing the replaced number from deleted and added count
+    for item in FR_replaced:
+        deleted_src.remove(item)
+
+    for item in AR_replaced:
+        data_added_src.remove(item)
+
+    delta_sheet.cell(2,2).value= int(len(deleted_src))
+    delta_sheet.cell(3,2).value=int(len(data_added_src))
 
     combined_wb.save("combined_excel.xlsx")
         

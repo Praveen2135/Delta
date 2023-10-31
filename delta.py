@@ -280,7 +280,7 @@ def Delta(AR_f,FR_f):
                 col= cell.column
                 cell_col = AR_sheet.cell(ro,col)
                 #print(cell_col.coordinate)
-                cell_col.fill = PatternFill(start_color="FF0000",fill_type="solid")
+                cell_col.fill = PatternFill(start_color="00FF00",fill_type="solid")
                 cell_col.comment = Comment("Data Added in AR file", author="R. Praveen")
 
     UP_dict_ar = unit_period_dict(AR_fn,deleted_src,data_added_src,AR_src)
@@ -300,7 +300,7 @@ def Delta(AR_f,FR_f):
                 cell_col.comment = Comment(note, author="R. Praveen")
                 print(f'Unit changed in FR file at {UP_dict_fr[item][item][0]}, & in AR file {UP_dict_ar[item][item][0]}')
 
-    delta_sheet.cell(4,2).value = int(unit_count)
+    delta_sheet.cell(4,2).value = int(len(unit_count))
 
     period_count = 0
     for item in UP_dict_fr:
@@ -316,7 +316,7 @@ def Delta(AR_f,FR_f):
                 cell_col.comment = Comment(note, author="R. Praveen")
                 print(f'Period changed in FR file at {UP_dict_fr[item][item][1]}, & in AR file {UP_dict_ar[item][item][1]}')
 
-    delta_sheet.cell(5,2).value = int(period_count)
+    delta_sheet.cell(5,2).value = int(len(period_count))
 
     #Merging
     MER_ar = merge_unmerg_dict(AR_fn)

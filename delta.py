@@ -9,6 +9,7 @@ from openpyxl.workbook.workbook import Workbook
 import streamlit as st
 import requests
 from streamlit_lottie import st_lottie
+from openpyxl.styles import Font, Border, Side
 
 
 col3,col4 = st.columns(2)
@@ -87,7 +88,7 @@ def unit_period_dict(wb_fn,deleted_src,data_added_src,AR_src):
                         #print(iter_cell.coordinate)
                     if iter_cell.hyperlink is not None:
                         if (iter_cell.hyperlink.target.split("/")[-1]) in deleted_src:
-                            print(iter_cell.coordinate)
+                           # print(iter_cell.coordinate)
                             pass
                         elif (iter_cell.hyperlink.target.split("/")[-1]) in data_added_src:
                             pass
@@ -240,6 +241,10 @@ def Delta(AR_f,FR_f):
 
     delta_sheet = combined_wb['Delta']
 
+    #formating 
+    font = Font(bold=True)
+    border = Border(top=Side(style='thin'))
+
     #entering names in new sheet
     delta_sheet.cell(1,1).value='Errors'
     delta_sheet.cell(1,2).value='Count'
@@ -251,12 +256,35 @@ def Delta(AR_f,FR_f):
     delta_sheet.cell(7,1).value= 'Wrong Tagging - Quater'
     delta_sheet.cell(8,1).value= 'Wrong Tagging - Value'
     delta_sheet.cell(9,1).value= 'Wrong Tagging - Data Replaced'
+    delta_sheet.cell(10,1).value= 'Wrong Fiscal'
+    delta_sheet.cell(11,1).value= 'Total Errors'
+
+    #formating this cell
+    delta_sheet.cell(11,1).font = font
+    delta_sheet.cell(11,1).border = border
 
     AR_src = extract_hyperlinks_from_excel(AR_f)
     FR_src = extract_hyperlinks_from_excel(FR_f)
 
     deleted_src = [item for item in FR_src if item not in AR_src]
     data_added_src = [item for item in AR_src if item not in FR_src]
+
+    
+    #for fical dates
+    fiscal_count = 0
+    for row in range(1, 4):
+      for column in range (1, max(AR_fn.max_column, FR_fn.max_column) + 1):
+        cell1 = AR_fn.cell(row = row, column= column)
+        cell2 = FR_fn.cell(row = row, column=column)
+        if cell1.value == cell2.value:
+            pass
+        else:
+            note = f"Value Changed from {cell2.value}, to {cell1.value}"
+            cell = AR_sheet.cell(row,column)
+            cell.fill = PatternFill(start_color="FF0000",fill_type="solid")
+            cell.comment = Comment(note, author="R. Praveen")
+            fiscal_count = fiscal_count+1
+            print(f"wrong fiscal -{cell1.value}, fr-{cell2.value}")
 
     
 
@@ -286,7 +314,7 @@ def Delta(AR_f,FR_f):
     UP_dict_ar = unit_period_dict(AR_fn,deleted_src,data_added_src,AR_src)
     UP_dict_fr = unit_period_dict(FR_fn,deleted_src,data_added_src,AR_src)
 
-    unit_count=0
+    unit_count=[]
     for item in UP_dict_fr:
         if item in UP_dict_ar:
             if UP_dict_fr[item][item][0] == UP_dict_ar[item][item][0]:
@@ -294,18 +322,18 @@ def Delta(AR_f,FR_f):
             else:
                 ro=(UP_dict_ar[item][item][3]).row
                 cell_col = AR_sheet.cell(ro,3)
-                
-                dict_unit = All_SRC_in_ROW(AR_fn,ro,data_added_src,deleted_src)
-                print(f"unit list - {dict_unit}")
-                unit_count = unit_count+int(len(dict_unit))
+                list_unit,dumy_ar,dumy_fr = All_SRC_in_ROW(AR_fn,ro,data_added_src,deleted_src)
+                unit_count.append(int(len(list_unit)))
                 cell_col.fill = PatternFill(start_color="FF0000",fill_type="solid")
                 note = f'Unit is Changed from {UP_dict_fr[item][item][0]} to {UP_dict_ar[item][item][0]}'
                 cell_col.comment = Comment(note, author="R. Praveen")
-                print(f'Unit changed in FR file at {UP_dict_fr[item][item][0]}, & in AR file {UP_dict_ar[item][item][0]}')
+                #print(f'Unit changed in FR file at {UP_dict_fr[item][item][0]}, & in AR file {UP_dict_ar[item][item][0]}')
 
-    delta_sheet.cell(4,2).value = int(unit_count)
+    #print(f"list of unit - {sum(unit_count)}")
+    #print(unit_count)
+    delta_sheet.cell(4,2).value = int(sum(unit_count))
 
-    period_count = 0
+    period_count = []
     for item in UP_dict_fr:
         if item in UP_dict_ar:
             if UP_dict_fr[item][item][1] == UP_dict_ar[item][item][1]:
@@ -313,13 +341,16 @@ def Delta(AR_f,FR_f):
             else:
                 ro=(UP_dict_ar[item][item][3]).row
                 cell_col = AR_sheet.cell(ro,4)
-                period_count = period_count+1
+                list_unit_p,dumy_ar,dumy_fr = All_SRC_in_ROW(AR_fn,ro,data_added_src,deleted_src)
+                period_count.append(int(len(list_unit_p)))
                 cell_col.fill = PatternFill(start_color="FF0000",fill_type="solid")
                 note = f'Period is Changed from {UP_dict_fr[item][item][1]} to {UP_dict_ar[item][item][1]}'
                 cell_col.comment = Comment(note, author="R. Praveen")
-                print(f'Period changed in FR file at {UP_dict_fr[item][item][1]}, & in AR file {UP_dict_ar[item][item][1]}')
+                #print(f'Period changed in FR file at {UP_dict_fr[item][item][1]}, & in AR file {UP_dict_ar[item][item][1]}')
 
-    delta_sheet.cell(5,2).value = int(period_count)
+    #print(f"list of period - {sum(period_count)}")
+    #print(period_count)
+    delta_sheet.cell(5,2).value = int(sum(period_count))
 
     #Merging
     MER_ar = merge_unmerg_dict(AR_fn)
@@ -357,7 +388,7 @@ def Delta(AR_f,FR_f):
                     final_count = ar_count
                 else:
                     final_count = fr_count
-                print(f'in FR file row no- {row}, was changed in AR file. Row in AR file {row_ar}. count - {final_count}')
+                #print(f'in FR file row no- {row}, was changed in AR file. Row in AR file {row_ar}. count - {final_count}')
                 Merging_count.append(final_count)
                 row = AR_sheet[row_ar]
                 for cell in row:
@@ -374,7 +405,7 @@ def Delta(AR_f,FR_f):
             if FR_src[item][item][2]==AR_src[item][item][2]:
                 pass
             else:
-                print(f"wrong taging in {FR_src[item][item][1]}, shifted to {AR_src[item][item][1]}")
+                #print(f"wrong taging in {FR_src[item][item][1]}, shifted to {AR_src[item][item][1]}")
                 fr_cell = FR_sheet.cell(FR_src[item][item][4].row,FR_src[item][item][4].column)
                 ar_cell = AR_sheet.cell(AR_src[item][item][4].row,AR_src[item][item][4].column)
                 ar_note = f'Wrong tagging corrected, shfited from {FR_src[item][item][1]} to {AR_src[item][item][1]}'
@@ -391,7 +422,7 @@ def Delta(AR_f,FR_f):
             if FR_src[item][item][3]==AR_src[item][item][3]:
                 pass
             else:
-                print(f"wrong taging in {FR_src[item][item][1]}- {FR_src[item][item][3]}, changed in {AR_src[item][item][1]} , to - {AR_src[item][item][3]}")
+                #print(f"wrong taging in {FR_src[item][item][1]}- {FR_src[item][item][3]}, changed in {AR_src[item][item][1]} , to - {AR_src[item][item][3]}")
                 fr_cell = FR_sheet.cell(FR_src[item][item][4].row,FR_src[item][item][4].column)
                 ar_cell = AR_sheet.cell(AR_src[item][item][4].row,AR_src[item][item][4].column)
                 ar_note = f'Wrong tagging corrected, Value changed from {FR_src[item][item][3]} to {AR_src[item][item][3]}'
@@ -417,7 +448,7 @@ def Delta(AR_f,FR_f):
                 ar_row_added = []
                 for row_iter in row_fr_wrong_tag[item]:
                     if row_iter in deleted_src:
-                        print(f'deleted {row_iter}')
+                       # print(f'deleted {row_iter}')
                         fr_row_deleted.append(row_iter)
                         
                 for row_iter in row_ar_wrong_tag[item]:
@@ -425,7 +456,7 @@ def Delta(AR_f,FR_f):
                         ar_row_added.append(row_iter)
                 ar['AR']= ar_row_added
                 fr['FR']=fr_row_deleted
-                print(f"fr - {len(fr_row_deleted)}")
+                #print(f"fr - {len(fr_row_deleted)}")
                 if len(fr_row_deleted) > 0:
                     wrong_taging_dict[(AR_src[item][item][4]).row] = [ar,fr]
 
@@ -454,6 +485,13 @@ def Delta(AR_f,FR_f):
 
     delta_sheet.cell(2,2).value= int(len(deleted_src))
     delta_sheet.cell(3,2).value=int(len(data_added_src))
+    print(f"Fiscal - {fiscal_count}")
+    delta_sheet.cell(10,2).value = fiscal_count
+    delta_sheet.cell(11,2).value= "=SUM(B2:B10)"
+
+    #formating this cell
+    delta_sheet.cell(11,2).font = font
+    delta_sheet.cell(11,2).border = border
 
     combined_wb.save("combined_excel.xlsx")
         

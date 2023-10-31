@@ -296,7 +296,7 @@ def Delta(AR_f,FR_f):
                 cell_col = AR_sheet.cell(ro,3)
                 
                 dict_unit = All_SRC_in_ROW(AR_fn,ro,data_added_src,deleted_src)
-                unit_count = unit_count+int(len(dict_unit)
+                unit_count = unit_count+int(len(dict_unit))
                 cell_col.fill = PatternFill(start_color="FF0000",fill_type="solid")
                 note = f'Unit is Changed from {UP_dict_fr[item][item][0]} to {UP_dict_ar[item][item][0]}'
                 cell_col.comment = Comment(note, author="R. Praveen")

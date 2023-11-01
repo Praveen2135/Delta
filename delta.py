@@ -490,7 +490,9 @@ def Delta(AR_f,FR_f):
     print(f"Fiscal - {fiscal_count}")
     delta_sheet.cell(10,2).value = fiscal_count
     delta_sheet.cell(11,2).value= "=SUM(B2:B10)"
-    delta_sheet.cell(7,5).value = wrong_tagging_quater_cell
+    
+    for i in range(1,100)
+        delta_sheet.cell(7,i+4).value = wrong_tagging_quater_cell[i-1]
 
     #formating this cell
     delta_sheet.cell(11,2).font = font

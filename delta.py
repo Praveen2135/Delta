@@ -373,8 +373,84 @@ def Delta(AR_f,FR_f):
             row_ar_wrong_tag[item] = ar_wrong_tagging
             row_fr_wrong_tag[item] = fr_wrong_tagging
 
-    #list for merging count
+    #list for merging count - Upgraded
     Merging_count = []
+    unique_row_src = []
+    for item in row_vise_src_FR:
+        if item in row_vise_src_AR:
+            if row_vise_src_FR[item] == row_vise_src_AR[item]:
+                pass
+            else:
+                row = MER_fr[item][item][0]
+                row_ar = MER_ar[item][item][0]
+                row_c = AR_sheet[row_ar]
+                row_f_c = FR_sheet[row]
+                for cell in row_c:
+                    cell.fill = PatternFill(start_color="FF0000",fill_type="solid")
+                    note = f'Merging Error was corrected in this row'
+                    cell.comment = Comment(note, author="R. Praveen")
+                for cell in row_f_c:
+                    cell.fill = PatternFill(start_color="FF0000",fill_type="solid")
+                    note = f'Merging Error was corrected in this row'
+                    cell.comment = Comment(note, author="R. Praveen")
+                ar_count=len(row_vise_src_AR[item])
+                fr_count = len(row_vise_src_FR[item])
+                unique_elements = list(set(row_vise_src_FR[item]) ^ set(row_vise_src_AR[item]))
+                fr_row_num = []
+                for i in unique_elements:
+                    fr_row_num.append(FR_src[i][i][-1].row)
+
+                    fr_row_num = list(set(fr_row_num))
+                    print(len(fr_row_num))
+                    if len(fr_row_num)<2:
+                        if fr_row_num[0] in unique_row_src:
+                            pass
+
+                        else:
+                            unique_row_src.append(fr_row_num[0])
+                            print(fr_row_num)
+                            for i in fr_row_num:
+                                final_count=0
+                                row_list_fr,fr_,fr_wrong_tagging = All_SRC_in_ROW(FR_fn,i,data_added_src,deleted_src)
+                                #print(f'{row_list_fr} --- {unique_elements}')
+                                if len(row_list_fr) == len(unique_elements): # Unmerged
+                                    final_count = int(ar_count)
+                                    print('ar')
+
+                                elif len(row_list_fr) >= len(unique_elements):
+                                    final_count = fr_count+int(len(unique_elements))
+
+                                print(f"""in FR file row no- {row}, was changed in AR file.- {fr_count}
+                                    Row in AR file {row_ar}. - {ar_count}, final count -{final_count}""")
+                                #print(unique_elements)
+                                Merging_count.append(final_count)
+
+                    else:
+                        final_count=0
+                        temp_count=0
+                        for j in fr_row_num:
+                            if j not in unique_row_src:
+                                unique_row_src.append(j)
+                                row_list_fr,fr_,fr_wrong_tagging = All_SRC_in_ROW(FR_fn,j,data_added_src,deleted_src)
+                                if len(row_list_fr) <= len(unique_elements): # Unmerged
+                                    temp_count = int(ar_count)
+                                    print(temp_count)
+
+                                else:
+                                    temp_count = temp_count + len(row_list_fr)
+                                    print(temp_count)
+
+
+
+                        final_count = temp_count
+                        print(f"""in FR file row no- {row}, was changed in AR file.- {fr_count}
+                                Row in AR file {row_ar}. - {ar_count}, final count -{final_count}""")
+                            #print(unique_elements)
+                        Merging_count.append(final_count)
+
+
+    #list for merging count
+    """Merging_count = []
     for item in row_vise_src_FR:
         if item in row_vise_src_AR:
             if row_vise_src_FR[item] == row_vise_src_AR[item]:
@@ -394,7 +470,7 @@ def Delta(AR_f,FR_f):
                 for cell in row:
                     cell.fill = PatternFill(start_color="FF0000",fill_type="solid")
                     note = f'Merging Error was corrected in this row'
-                    cell.comment = Comment(note, author="R. Praveen")
+                    cell.comment = Comment(note, author="R. Praveen")"""
 
     delta_sheet.cell(6,2).value=int(sum(Merging_count))
 
@@ -489,7 +565,7 @@ def Delta(AR_f,FR_f):
     delta_sheet.cell(10,2).value = fiscal_count
     delta_sheet.cell(11,2).value= "=SUM(B2:B10)"
 
-    #formating this cell
+    #formating this cell 
     delta_sheet.cell(11,2).font = font
     delta_sheet.cell(11,2).border = border
 

@@ -399,9 +399,8 @@ def Delta(AR_f,FR_f):
                 fr_row_num = []
                 for i in unique_elements:
                     fr_row_num.append(FR_src[i][i][-1].row)
-
                     fr_row_num = list(set(fr_row_num))
-                    print(len(fr_row_num))
+                    #print(len(fr_row_num))
                     if len(fr_row_num)<2:
                         if fr_row_num[0] in unique_row_src:
                             pass

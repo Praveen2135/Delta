@@ -476,6 +476,7 @@ def Delta(AR_f,FR_f):
 
     # Wrog tagging - quater
     wrong_quater_tagged = []
+    wrong_tagging_quater_cell=[]
     for item in FR_src.keys():
         if item in AR_src.keys():
             if FR_src[item][item][2]==AR_src[item][item][2]:
@@ -487,9 +488,10 @@ def Delta(AR_f,FR_f):
                 ar_note = f'Wrong tagging corrected, shfited from {FR_src[item][item][1]} to {AR_src[item][item][1]}'
                 fr_cell.fill = PatternFill(start_color="FF0000",fill_type="solid")
                 fr_cell.comment = Comment('Wrong tagging', author="R. Praveen")
-                ar_cell.fill = PatternFill(start_color="FF0000",fill_type="solid")
+                ar_cell.fill = PatternFill(start_color="0000FF",fill_type="solid")
                 ar_cell.comment = Comment(ar_note, author="R. Praveen")
                 wrong_quater_tagged.append(AR_src[item])
+                wrong_tagging_quater_cell.append(ar_cell.coordinate)
     
     #wrong tagging - value
     Wrong_value_tagged = []
@@ -564,6 +566,12 @@ def Delta(AR_f,FR_f):
     print(f"Fiscal - {fiscal_count}")
     delta_sheet.cell(10,2).value = fiscal_count
     delta_sheet.cell(11,2).value= "=SUM(B2:B10)"
+    
+    try:
+        for i in range(1,100):
+            delta_sheet.cell(7,i+4).value = wrong_tagging_quater_cell[i-1]
+    except:
+        pass
 
     #formating this cell 
     delta_sheet.cell(11,2).font = font

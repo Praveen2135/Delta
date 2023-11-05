@@ -462,7 +462,7 @@ if selected == "Full model":
                                     temp_count = int(ar_count)
 
                                 else:
-                                    temp_count = temp_count + len(row_list_fr)
+                                    temp_count = temp_count 
                     
                         final_count = temp_count
                         print(f"""in FR file row no- {row}, was changed in AR file.- {fr_count}

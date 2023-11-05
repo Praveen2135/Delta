@@ -444,7 +444,7 @@ if selected == "Full model":
                             
 
                                 elif len(row_list_fr) >= len(unique_elements):
-                                    final_count = fr_count+int(len(unique_elements))
+                                    final_count = fr_count
 
                                 print(f"""in FR file row no- {row}, was changed in AR file.- {fr_count}
                                     Row in AR file {row_ar}. - {ar_count}, final count -{final_count}""")

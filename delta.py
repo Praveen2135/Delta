@@ -12,24 +12,13 @@ from streamlit_lottie import st_lottie
 from openpyxl.styles import Font, Border, Side
 
 
-col3,col4= st.columns(2)
+col3,col4,col8= st.columns(3)
 with col3:
     st.header('Delta...')
 with col4:
     selected = st.radio("Select model type",options=['Full model','Earnings'])
-
-col7,col8 = st.columns(2)
-with col7:
-    ticker = st.text_input('Ticker')
-
 with col8:
-    R_name = st.text_input("Reviewer Name",)
-
-if ticker:
-    ticker = ticker
-else:
-    ticker = "Not_given"
-
+    R_name = st.text_input("Reviewer Name")
 
 
 if selected == "Full model":
@@ -40,7 +29,18 @@ if selected == "Full model":
 
         with col2:
             FR = st.file_uploader('Analyst File')
+    else:
+        st.warning("Enter Reviewer name...To proceed...!")
+    try:
+        AR_file_name = str(AR.name).split("_")[0]
+        FR_file_name = str(FR.name).split("_")[0]
 
+        if AR_file_name == FR_file_name:
+            pass
+        else:
+            st.error("Both File tickers are miss macthing... Please look into it...!")
+    except:
+        pass
 
     def load_lottiurl(url: str):
             r = requests.get(url)
@@ -205,7 +205,7 @@ if selected == "Full model":
 
         if AR_fn.max_column == FR_fn.max_column:
             with col6:
-                st_lottie(loader,height=250,width=250, key='loader')
+                st_lottie(loader,height=200,width=200, key='loader')
         
         else:
             with col6:
@@ -441,7 +441,7 @@ if selected == "Full model":
                                 #print(f'{row_list_fr} --- {unique_elements}')
                                 if len(row_list_fr) == len(unique_elements): # Unmerged
                                     final_count = int(ar_count)
-                                    print('ar')
+                            
 
                                 elif len(row_list_fr) >= len(unique_elements):
                                     final_count = fr_count+int(len(unique_elements))
@@ -459,15 +459,11 @@ if selected == "Full model":
                                 unique_row_src.append(j)
                                 row_list_fr,fr_,fr_wrong_tagging = All_SRC_in_ROW(FR_fn,j,data_added_src,deleted_src)
                                 if len(row_list_fr) <= len(unique_elements): # Unmerged
-                                    temp_count = int(ar_count)
-                                    print(temp_count)
+                                    temp_count = int(ar_count)+int(len(unique_elements))
 
                                 else:
                                     temp_count = temp_count + len(row_list_fr)
-                                    print(temp_count)
-
-
-
+                    
                         final_count = temp_count
                         print(f"""in FR file row no- {row}, was changed in AR file.- {fr_count}
                                 Row in AR file {row_ar}. - {ar_count}, final count -{final_count}""")
@@ -591,30 +587,29 @@ if selected == "Full model":
 
         combined_wb.save("combined_excel.xlsx")
             
-    if R_name:
-        d_but = st.button("Delta Review")
-    else:
-        st.warning("Enter Reviewer name...To proceed...!")
+    
+    d_but = st.button("Delta Review")
+    
 
     col5,col6 = st.columns(2)
     download = False
 
 
-    try:
-        if d_but:
-            with st.spinner("Reviewing...."):
-                Delta(AR,FR)   
-            download = True
+    
+    if d_but:
+        with st.spinner("Reviewing...."):
+            Delta(AR,FR)   
+        download = True
 
-    except:
-        pass
 
     data = 'combined_excel.xlsx'
     # Read the file content
     with open(data, 'rb') as file:
         file_content = file.read()
-
-    file_n = f'{ticker}_{R_name}_delta.xlsx'
+    try:
+        file_n = f'{AR_file_name}_{R_name}_delta.xlsx'
+    except:
+        pass
 
     if download:
         st.download_button("Download file",data=file_content,file_name=file_n,mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')

@@ -1,0 +1,22 @@
+#list for merging count
+    """Merging_count = []
+    for item in row_vise_src_FR:
+        if item in row_vise_src_AR:
+            if row_vise_src_FR[item] == row_vise_src_AR[item]:
+                pass
+            else:
+                row = MER_fr[item][item][0]
+                row_ar = MER_ar[item][item][0]
+                ar_count=len(row_vise_src_AR[item])
+                fr_count = len(row_vise_src_FR[item])
+                if ar_count > fr_count:
+                    final_count = ar_count
+                else:
+                    final_count = fr_count
+                #print(f'in FR file row no- {row}, was changed in AR file. Row in AR file {row_ar}. count - {final_count}')
+                Merging_count.append(final_count)
+                row = AR_sheet[row_ar]
+                for cell in row:
+                    cell.fill = PatternFill(start_color="FF0000",fill_type="solid")
+                    note = f'Merging Error was corrected in this row'
+                    cell.comment = Comment(note, author="R. Praveen")"""###

@@ -459,7 +459,7 @@ if selected == "Full model":
                                 unique_row_src.append(j)
                                 row_list_fr,fr_,fr_wrong_tagging = All_SRC_in_ROW(FR_fn,j,data_added_src,deleted_src)
                                 if len(row_list_fr) <= len(unique_elements): # Unmerged
-                                    temp_count = int(ar_count)+int(len(unique_elements))
+                                    temp_count = int(ar_count)
 
                                 else:
                                     temp_count = temp_count + len(row_list_fr)

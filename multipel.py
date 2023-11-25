@@ -10,6 +10,8 @@ import streamlit as st
 import requests
 from streamlit_lottie import st_lottie
 from openpyxl.styles import Font, Border, Side
+import base64
+import time
 
 
 col3,col4,col8= st.columns(3)
@@ -231,8 +233,9 @@ if selected == "Earnings":
     except:
         pass
 
-    def Delta_earning(AR_f,FR_f,ticker_name):
+    def Delta_earning(AR_f,FR_f,ticker_name,count):
         with st.spinner("Loading Excel Files..."):
+            t1 = time.time()
             #Loading excel and activating it
             AR_df = load_workbook(AR_f)
             FR_df = load_workbook(FR_f)
@@ -242,7 +245,8 @@ if selected == "Earnings":
         with st.spinner("Checking Columns...."):
             if AR_fn.max_column == FR_fn.max_column:
                 with col6:
-                    st_lottie(loader,height=200,width=200, key='loader')
+                    pass 
+                    #st_lottie(loader,height=200,width=200, key='loader')
             
             else:
                 with col6:
@@ -250,7 +254,7 @@ if selected == "Earnings":
                 st.error(f"Both files number of Columns are not same.! , Level 1 columns- {FR_fn.max_column}, Level 2 columns- {AR_fn.max_column}")
                 st.stop()
 
-        excel_files = [AR,FR]
+        excel_files = [AR_f,FR_f]
 
         # finding calender
         calender_value = AR_fn.cell(1,AR_fn.max_column).value
@@ -260,44 +264,81 @@ if selected == "Earnings":
             column_earning = -2
         else:
             column_earning = -1
+        t2 = time.time()
+        if count == 1:
+            with st.spinner("Combining both excel...."):
+                # Create a new Excel workbook to consolidate the sheets.
+                combined_workbook = openpyxl.Workbook()
 
-        with st.spinner("Combining both excel...."):
-            # Create a new Excel workbook to consolidate the sheets.
-            combined_workbook = openpyxl.Workbook()
+                # Iterate through each Excel file and each sheet within each file.
+                name_change_count=0
+                for excel_file in excel_files:
+                    workbook = openpyxl.load_workbook(excel_file)
+                    for sheet_name in workbook.sheetnames:
+                        sheet = workbook[sheet_name]
+                        
+                        if name_change_count == 0:
+                            # Create a new sheet in the combined workbook with the same name.
+                            combined_sheet = combined_workbook.create_sheet(title="AR")
+                            name_change_count=name_change_count+1
 
-            # Iterate through each Excel file and each sheet within each file.
-            for excel_file in excel_files:
-                workbook = openpyxl.load_workbook(excel_file)
-                for sheet_name in workbook.sheetnames:
-                    sheet = workbook[sheet_name]
-                    
-                    # Create a new sheet in the combined workbook with the same name.
-                    combined_sheet = combined_workbook.create_sheet(title=sheet_name)
-                    
-                    # Copy data from the original sheet to the combined sheet.
-                    for row in sheet.iter_rows():
-                        for cell in row:
-                            combined_sheet[cell.coordinate] = cell.value
+                        else:
+                            # Create a new sheet in the combined workbook with the same name.
+                            combined_sheet = combined_workbook.create_sheet(title="FR")
+                        
+                        # Copy data from the original sheet to the combined sheet.
+                        for row in sheet.iter_rows():
+                            for cell in row:
+                                combined_sheet[cell.coordinate] = cell.value
+                try:
+                    # Remove the default sheet created by openpyxl.
+                    combined_workbook.remove(combined_workbook.active)
+                except:
+                    pass
 
-            # Remove the default sheet created by openpyxl.
-            combined_workbook.remove(combined_workbook.active)
+                
+        else:
+            with st.spinner("Combining both excel...."):
+                # Create a new Excel workbook to consolidate the sheets.
+                #combined_workbook = openpyxl.Workbook()
+                combined_workbook = load_workbook("combined_excel.xlsx")
 
-            # Save the combined workbook to a new file.
-            combined_workbook.save("combined_excel.xlsx")
+                # Iterate through each Excel file and each sheet within each file.
+                name_change_count=0
+                for excel_file in excel_files:
+                    workbook = openpyxl.load_workbook(excel_file)
+                    for sheet_name in workbook.sheetnames:
+                        sheet = workbook[sheet_name]
+                        
+                        if name_change_count == 0:
+                            # Create a new sheet in the combined workbook with the same name.
+                            combined_sheet = combined_workbook.create_sheet(title="AR")
+                            name_change_count=name_change_count+1
 
+                        else:
+                            # Create a new sheet in the combined workbook with the same name.
+                            combined_sheet = combined_workbook.create_sheet(title="FR")
+                        
+                        # Copy data from the original sheet to the combined sheet.
+                        for row in sheet.iter_rows():
+                            for cell in row:
+                                combined_sheet[cell.coordinate] = cell.value
+                
+        t3 = time.time()
         with st.spinner("Loading Combined Excel and formating...."):
-            combined_wb = load_workbook("combined_excel.xlsx")
-            AR_sheet = combined_wb['Sheet1']
-            FR_sheet = combined_wb['Sheet11']
+            #combined_wb = load_workbook("combined_excel.xlsx")
+            AR_sheet = combined_workbook['AR']
+            FR_sheet = combined_workbook['FR']
 
+        with st.spinner("Loading Combined Excel and formating...."):    
             #created new sheet to enter count
-            combined_wb.create_sheet(title="Delta")
+            combined_workbook.create_sheet(title=f'{ticker_name}_Delta')
 
             #changing Sheet names
             AR_sheet.title = f"{ticker_name}_Reviewer"
             FR_sheet.title = f"{ticker_name}_Analyst"
 
-            delta_sheet = combined_wb[f'{ticker_name}_Delta']
+            delta_sheet = combined_workbook[f'{ticker_name}_Delta']
 
             #formating 
             font = Font(bold=True)
@@ -331,6 +372,7 @@ if selected == "Earnings":
             delta_sheet.cell(11,1).font = font
             delta_sheet.cell(11,1).border = border
 
+        t4 = time.time()
         with st.spinner("Extracting All SRC values...."):
             fr_all_src = extract_hyperlinks_from_excel_earnings(FR_f,column_earning)
             ar_all_src = extract_hyperlinks_from_excel_earnings(AR_f,column_earning)
@@ -338,6 +380,7 @@ if selected == "Earnings":
             deleted_src = [item for item in fr_all_src if item not in ar_all_src]
             data_added_src = [item for item in ar_all_src if item not in fr_all_src]
 
+        t5 = time.time()
         with st.spinner("Checking Fiscal dates...."):
             #for fical dates
             fiscal_count = 0
@@ -357,6 +400,7 @@ if selected == "Earnings":
                         fiscal_count = fiscal_count+1
                         print(f"wrong fiscal -{cell1.value}, from-{cell2.value}")
 
+        t6 = time.time()
         with st.spinner("Checking Unit Errors...."):
             #Unit error
             unit_count=[]
@@ -376,6 +420,7 @@ if selected == "Earnings":
             
             delta_sheet.cell(4,2).value = int(len(unit_count))
 
+        t7 = time.time()
         with st.spinner("Checking Period Errors...."):
             #Period error
             period_count = []
@@ -395,6 +440,7 @@ if selected == "Earnings":
 
             delta_sheet.cell(5,2).value = int(len(period_count))
 
+        t8 = time.time()
         with st.spinner("Checking Wrong Tagging - Quaters...."):
             #Wrong tagging
     # -----Wrong quater tagging-----
@@ -413,6 +459,7 @@ if selected == "Earnings":
                         wrong_quater_tagged.append(item)
                         wrong_quater_tagged_cell_coordinate.append(ar_all_src[item][item][4].coordinate)
 
+        t9 = time.time()
         with st.spinner("Checking Wrong Tagging - Values...."):
     #------ Wrong value tagged ------
             Wrong_value_tagged = []
@@ -433,6 +480,7 @@ if selected == "Earnings":
             delta_sheet.cell(7,2).value= int(len(wrong_quater_tagged))
             delta_sheet.cell(8,2).value= int(len(Wrong_value_tagged))
 
+        t10 = time.time()
         with st.spinner("Collecting all SRC to check merging and data replaced...."):
             #Merging
             MER_ar = merge_unmerg_dict(AR_fn)
@@ -455,6 +503,7 @@ if selected == "Earnings":
                     row_ar_wrong_tag[item] = ar_wrong_tagging
                     row_fr_wrong_tag[item] = fr_wrong_tagging
 
+        t11 = time.time()
         with st.spinner("Checking Merging Errors...."):
             merge_row_latest_src=[]
             merge_row_previous_src=[]
@@ -496,6 +545,7 @@ if selected == "Earnings":
                         cell.comment = Comment(note, author="R. Praveen")
                         Merging_count.append(item)
 
+        t12 = time.time()
         with st.spinner("Checking Wrong Tagging - Data Replaced...."):
             # Wrong tagging - Data points replaced
             wrong_taging_dict = {}
@@ -541,6 +591,7 @@ if selected == "Earnings":
             delta_sheet.cell(6,2).value=int(len(Merging_count))
             delta_sheet.cell(9,2).value = int(len(AR_replaced))
 
+        t13 = time.time()
         with st.spinner("Adjusting Data added and Data deleted...."):
             for item in FR_replaced:
                 deleted_src.remove(item)
@@ -548,6 +599,7 @@ if selected == "Earnings":
             for item in AR_replaced:
                 data_added_src.remove(item)
 
+        t14 = time.time()
         with st.spinner("Storing all Error counts to Delta Sheet...."):
             delta_sheet.cell(2,2).value= int(len(deleted_src))
             delta_sheet.cell(3,2).value=int(len(data_added_src))
@@ -607,8 +659,48 @@ if selected == "Earnings":
             delta_sheet.cell(22,4).font = font
             delta_sheet.cell(22,4).border = border
 
-            file_name = f"{ticker_name}.xlsx"
-            combined_wb.save(file_name)
+            t15 = time.time()
+            #timing 
+            delta_sheet.cell(25,1).value = 'Process'
+            delta_sheet.cell(26,1).value = 'Loading Excel'
+            delta_sheet.cell(27,1).value = 'Combining Excel'
+            delta_sheet.cell(28,1).value = 'Loading & Formating excel'
+            delta_sheet.cell(29,1).value = 'Extracting all SRC'
+            delta_sheet.cell(30,1).value = 'checking Fiscal'
+            delta_sheet.cell(31,1).value = 'Checking Units'
+            delta_sheet.cell(32,1).value = 'Checking Periods'
+            delta_sheet.cell(33,1).value = 'checking Quaters'
+            delta_sheet.cell(34,1).value = 'Checking values'
+            delta_sheet.cell(35,1).value = 'SRC for Merging & Replaced data'
+            delta_sheet.cell(36,1).value = 'Checking Merging Errors'
+            delta_sheet.cell(37,1).value = 'Checking Data replaced'
+            delta_sheet.cell(38,1).value = 'Adjusting Data points'
+            delta_sheet.cell(39,1).value = 'Storing Delta Data'
+            delta_sheet.cell(40,1).value = 'Total Time Taken'
+            delta_sheet.cell(41,1).value = 'File size'
+
+            delta_sheet.cell(25,2).value = "Time taken"
+            delta_sheet.cell(26,2).value = int(t2-t1)
+            delta_sheet.cell(27,2).value = int(t3-t2)
+            delta_sheet.cell(28,2).value = int(t4-t3)
+            delta_sheet.cell(29,2).value = int(t5-t4)
+            delta_sheet.cell(30,2).value = int(t6-t5)
+            delta_sheet.cell(31,2).value = int(t7-t6)
+            delta_sheet.cell(32,2).value = int(t8-t7)
+            delta_sheet.cell(33,2).value = int(t9-t8)
+            delta_sheet.cell(34,2).value = int(t10-t9)
+            delta_sheet.cell(35,2).value = int(t11-t10)
+            delta_sheet.cell(36,2).value = int(t12-t11)
+            delta_sheet.cell(37,2).value = int(t13-t12)
+            delta_sheet.cell(38,2).value = int(t14-t13)
+            delta_sheet.cell(39,2).value = int(t15-t14)
+            delta_sheet.cell(40,2).value = int(t15-t1)
+            delta_sheet.cell(41,2).value = f"{(AR_f.size/1000)}KB"
+            
+
+            file_name = "combined_excel.xlsx"
+            combined_workbook.save(file_name)
+            #return combined_workbook
             
     
     d_but = st.button("Delta Review")
@@ -617,16 +709,22 @@ if selected == "Earnings":
     col5,col6 = st.columns(2)
     download = False
 
-
+    
     
     if d_but:
-        st.write(AR[0].read)
-        with st.spinner("Reviewing...."):
+        C=1
+        with col6:
+            st_lottie(loader,height=200,width=200, key='loader')
             for AR_file in AR:
                 for FR_file in FR:
-                    ticker_name = str(AR_file.name).split("_")[0]
-                    #Delta_earning(AR_file,FR_file,ticker_name)   
-                    #st.write(AR)
+                    if str(AR_file.name).split("_")[0] == str(FR_file.name).split("_")[0]:
+                        ticker_name= str(AR_file.name).split("_")[0]
+                        with st.spinner(f"Reviewing....{ticker_name}"):
+                            file = Delta_earning(AR_file,FR_file,ticker_name,C)   
+                            C=C+1
+
+        
+        #file.save('combined_excel.xlsx')                            #st.write(len(AR))
         download = True
 
 
@@ -635,9 +733,10 @@ if selected == "Earnings":
     with open(data, 'rb') as file:
         file_content = file.read()
     try:
-        file_n = f'{AR_file_name}_{R_name}_Earnings_delta.xlsx'
+        file_n = f'{R_name}_Earnings_delta.xlsx'
     except:
         pass
+
 
     if download:
         st.download_button("Download file",data=file_content,file_name=file_n,mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')

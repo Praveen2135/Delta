@@ -1087,10 +1087,16 @@ elif selected == "Earnings":
             for item in AR_replaced:
                 data_added_src.remove(item)
 
+        data_added_cell = []
+        for src_dp in data_added_src:
+            cell = ar_all_src[src_dp][src_dp][4]
+            data_added_cell.append(cell)
+            
         t14 = time.time()
         with st.spinner("Storing all Error counts to Delta Sheet...."):
             delta_sheet.cell(2,2).value= int(len(deleted_src))
             delta_sheet.cell(3,2).value=int(len(data_added_src))
+            delta_sheet.cell(3,3).value=str(data_added_cell)
             #print(f"Fiscal - {fiscal_count}")
             delta_sheet.cell(10,2).value = fiscal_count
             delta_sheet.cell(11,2).value= "=SUM(B2:B10)"

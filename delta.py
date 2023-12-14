@@ -582,8 +582,11 @@ if selected == "Full model":
                         ar['AR']= ar_row_added
                         fr['FR']=fr_row_deleted
                         #print(f"fr - {len(fr_row_deleted)}")
-                        if len(fr_row_deleted) > 0:
-                            wrong_taging_dict[(AR_src[item][item][4]).row] = [ar,fr]
+                        try:
+                            if len(fr_row_deleted) > 0:
+                                wrong_taging_dict[(AR_src[item][item][4]).row] = [ar,fr]
+                        except:
+                            pass
 
             AR_replaced = []
             FR_replaced = []
@@ -1079,6 +1082,11 @@ elif selected == "Earnings":
             delta_sheet.cell(6,2).value=int(len(Merging_count))
             delta_sheet.cell(9,2).value = int(len(AR_replaced))
 
+        merging_cells =[]
+        for src_dp in Merging_count:
+            cell = ar_all_src[src_dp][src_dp][1]
+            merging_cells.append(cell)
+        
         t13 = time.time()
         with st.spinner("Adjusting Data added and Data deleted...."):
             for item in FR_replaced:
@@ -1089,14 +1097,15 @@ elif selected == "Earnings":
 
         data_added_cell = []
         for src_dp in data_added_src:
-            cell = ar_all_src[src_dp][src_dp][4]
+            cell = ar_all_src[src_dp][src_dp][1]
             data_added_cell.append(cell)
             
         t14 = time.time()
         with st.spinner("Storing all Error counts to Delta Sheet...."):
             delta_sheet.cell(2,2).value= int(len(deleted_src))
             delta_sheet.cell(3,2).value=int(len(data_added_src))
-            delta_sheet.cell(3,3).value=str(data_added_cell)
+            delta_sheet.cell(3,4).value=str(data_added_cell)
+            delta_sheet.cell(6,4).value=str(merging_cells)
             #print(f"Fiscal - {fiscal_count}")
             delta_sheet.cell(10,2).value = fiscal_count
             delta_sheet.cell(11,2).value= "=SUM(B2:B10)"

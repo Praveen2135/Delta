@@ -871,6 +871,12 @@ elif selected == "Earnings":
             deleted_src = [item for item in fr_all_src if item not in ar_all_src]
             data_added_src = [item for item in ar_all_src if item not in fr_all_src]
 
+        deleted_cells =[]
+
+        for src_dp in deleted_src:
+            cell = fr_all_src[src_dp][src_dp][1]
+            deleted_cells.append(cell)
+        
         t5 = time.time()
         with st.spinner("Checking Fiscal dates...."):
             #for fical dates
@@ -1106,6 +1112,9 @@ elif selected == "Earnings":
         t14 = time.time()
         with st.spinner("Storing all Error counts to Delta Sheet...."):
             delta_sheet.cell(2,2).value= int(len(deleted_src))
+            delta_sheet.cell(2,4).value= str(deleted_cells)
+            note = "This can be shifted to other Quater or Deleted"
+            delta_sheet.cell(2,4).comment = Comment(note, author="R. Praveen")
             delta_sheet.cell(3,2).value=int(len(data_added_src))
             delta_sheet.cell(3,4).value=str(data_added_cell)
             delta_sheet.cell(6,4).value=str(merging_cells)

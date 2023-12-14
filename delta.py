@@ -1061,8 +1061,11 @@ elif selected == "Earnings":
                         ar['AR']= ar_row_added
                         fr['FR']=fr_row_deleted
                         #print(f"fr - {len(fr_row_deleted)}")
-                        if len(fr_row_deleted) > 0:
-                            wrong_taging_dict[(ar_all_src[item][item][4]).row] = [ar,fr]
+                        try:
+                            if len(fr_row_deleted) > 0:
+                                wrong_taging_dict[(ar_all_src[item][item][4]).row] = [ar,fr]
+                        except:
+                            pass
 
             AR_replaced = []
             FR_replaced = []

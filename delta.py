@@ -24,7 +24,7 @@ with col8:
 #function
 # For fetching all SRC from hyerlinks
 
-def extract_hyperlinks_from_excel(excel_file):
+#def extract_hyperlinks_from_excel(excel_file):
     # Create a dictionary to store the hyperlinks.
     #src_num_dict = {}
     list_of_dict = {}
@@ -51,7 +51,7 @@ def extract_hyperlinks_from_excel(excel_file):
     return list_of_dict
 
 # For fetching all SRC from hyerlinks
-def extract_hyperlinks_from_excel_earnings(excel_file,column_earning):
+#def extract_hyperlinks_from_excel_earnings(excel_file,column_earning):
     # Create a dictionary to store the hyperlinks.
     #src_num_dict = {}
     list_of_dict = {}
@@ -81,7 +81,7 @@ def extract_hyperlinks_from_excel_earnings(excel_file,column_earning):
     return list_of_dict
 
 #SRC for units and periods
-def unit_period_dict(wb_fn,deleted_src,data_added_src,AR_src):
+#def unit_period_dict(wb_fn,deleted_src,data_added_src,AR_src):
     unit_and_period_data ={}
     for row in range (1,(wb_fn.max_row+1)):
         cell_unit = wb_fn.cell(row = row, column= 3)
@@ -142,7 +142,7 @@ def unit_period_dict(wb_fn,deleted_src,data_added_src,AR_src):
     return unit_and_period_data
 
 #merging functions
-def merge_unmerg_dict(wb_fn):
+#def merge_unmerg_dict(wb_fn):
     merge_unmerg ={}
     for row in range (1,(wb_fn.max_row+1)):
         cell_unit = wb_fn.cell(row = row, column= 3)
@@ -170,7 +170,7 @@ def merge_unmerg_dict(wb_fn):
                 merge_unmerg[src_num]=src_num_dict
     return merge_unmerg
 
-def All_SRC_in_ROW(wb_fn,row,data_added_src,deleted_src):
+#def All_SRC_in_ROW(wb_fn,row,data_added_src,deleted_src):
     columns = wb_fn.max_column
     cell_unit = wb_fn.cell(row = row, column= 3)
     src_list =[]
@@ -195,7 +195,7 @@ def All_SRC_in_ROW(wb_fn,row,data_added_src,deleted_src):
     return src_list,ar_row_list,fr_row_list
 
 
-def load_lottiurl(url: str):
+#def load_lottiurl(url: str):
         r = requests.get(url)
         if r.status_code != 200:
             return None
